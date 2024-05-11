@@ -1,4 +1,4 @@
-package server
+package hx
 
 import (
 	"crypto/rand"
@@ -33,7 +33,7 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-type HXMessage struct {
+type Message struct {
 	Request     string `json:"HX-Request"`
 	Trigger     string `json:"HX-Trigger"`
 	TriggerName string `json:"HX-Trigger-Name"`
@@ -42,18 +42,18 @@ type HXMessage struct {
   Includes    map[string]string
 }
 
-type HXListener struct {
-	Callback func(*HXConnectionCtx, *HXMessage)
+type Listener struct {
+	Callback func(*ConnectionCtx, *Message)
 }
 
-type HXServer struct {
-	Connections  *[]*HXConnectionCtx
-	listeners    map[string]HXListener
-	OnConnection func(*HXConnectionCtx)
-	OnDisconnect func(*HXConnectionCtx)
+type Server struct {
+	Connections  *[]*ConnectionCtx
+	listeners    map[string]Listener
+	OnConnection func(*ConnectionCtx)
+	OnDisconnect func(*ConnectionCtx)
 }
 
-type HXConnectionCtx struct {
+type ConnectionCtx struct {
 	Client    *websocket.Conn
 	SessionID string
 }
@@ -63,24 +63,24 @@ type HXConnectionCtx struct {
 // 	Data HtmxMessage `json:"data"`
 // }
 
-func (ss *HXServer) LogConnections() {
+func (ss *Server) LogConnections() {
 	for _, client := range *ss.Connections {
 		log.Printf("Client %v", client.SessionID)
 	}
 }
 
-func (ss *HXServer) New() {
-	ss.OnConnection = func(ctx *HXConnectionCtx) {}
-	ss.OnDisconnect = func(ctx *HXConnectionCtx) {}
-	ss.listeners = map[string]HXListener{}
-	ss.Connections = &[]*HXConnectionCtx{}
+func (ss *Server) New() {
+	ss.OnConnection = func(ctx *ConnectionCtx) {}
+	ss.OnDisconnect = func(ctx *ConnectionCtx) {}
+	ss.listeners = map[string]Listener{}
+	ss.Connections = &[]*ConnectionCtx{}
 }
 
-func (ss *HXServer) Start(mux *http.ServeMux, endpoint string) {
+func (ss *Server) Start(mux *http.ServeMux, endpoint string) {
 	mux.Handle(endpoint, http.HandlerFunc(ss.handleNewConnection))
 }
 
-func (ss *HXServer) handleCloseConnection(ctx *HXConnectionCtx) func(int, string) error {
+func (ss *Server) handleCloseConnection(ctx *ConnectionCtx) func(int, string) error {
 
 	return func(code int, text string) error {
 		ss.OnDisconnect(ctx)
@@ -97,7 +97,7 @@ func (ss *HXServer) handleCloseConnection(ctx *HXConnectionCtx) func(int, string
 		return nil
 	}
 }
-func (ss *HXServer) handleNewConnection(w http.ResponseWriter, r *http.Request) {
+func (ss *Server) handleNewConnection(w http.ResponseWriter, r *http.Request) {
 	log.Print("Attempting to connect new client")
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -121,8 +121,8 @@ func (ss *HXServer) handleNewConnection(w http.ResponseWriter, r *http.Request) 
   ...
 }
 */
-func (ss *HXServer) newMessageListener(ctx *HXConnectionCtx) {
-	go func(ctx *HXConnectionCtx) {
+func (ss *Server) newMessageListener(ctx *ConnectionCtx) {
+	go func(ctx *ConnectionCtx) {
 		for {
       rawMessage := map[string]any{}
 
@@ -144,7 +144,7 @@ func (ss *HXServer) newMessageListener(ctx *HXConnectionCtx) {
 
       }
 
-      message := HXMessage{}
+      message := Message{}
 
       err = json.Unmarshal(jsonMessage,&message)
 
@@ -182,7 +182,7 @@ func (ss *HXServer) newMessageListener(ctx *HXConnectionCtx) {
 	}(ctx)
 }
 
-func (ss *HXServer) messageHandler(ctx *HXConnectionCtx, message *HXMessage) error {
+func (ss *Server) messageHandler(ctx *ConnectionCtx, message *Message) error {
 	for event, listener := range ss.listeners {
 		if message.Trigger == event {
 
@@ -192,8 +192,8 @@ func (ss *HXServer) messageHandler(ctx *HXConnectionCtx, message *HXMessage) err
 	return nil
 }
 
-func (ss *HXServer) newConnection(conn *websocket.Conn) HXConnectionCtx {
-	new_ctx := HXConnectionCtx{
+func (ss *Server) newConnection(conn *websocket.Conn) ConnectionCtx {
+	new_ctx := ConnectionCtx{
 		SessionID: GenB64(32),
 		Client:    conn,
 	}
@@ -203,7 +203,7 @@ func (ss *HXServer) newConnection(conn *websocket.Conn) HXConnectionCtx {
 	return new_ctx
 }
 
-func (ss *HXServer) Broadcast(event string, message []byte) error {
+func (ss *Server) Broadcast(event string, message []byte) error {
 	for _, conn := range *ss.Connections {
 		err := conn.Send(message)
 
@@ -216,11 +216,11 @@ func (ss *HXServer) Broadcast(event string, message []byte) error {
 	return nil
 }
 
-func (ss *HXServer) Listen(event string, listener func(*HXConnectionCtx, *HXMessage)) {
-	ss.listeners[event] = HXListener{Callback: listener}
+func (ss *Server) Listen(event string, listener func(*ConnectionCtx, *Message)) {
+	ss.listeners[event] = Listener{Callback: listener}
 }
 
-func (ctx *HXConnectionCtx) Send(message []byte) error {
+func (ctx *ConnectionCtx) Send(message []byte) error {
 
   err := ctx.Client.WriteMessage(1,message)
 
@@ -231,11 +231,11 @@ func (ctx *HXConnectionCtx) Send(message []byte) error {
 	return nil
 }
 
-func (ctx *HXConnectionCtx) SendStr(message string) error {
+func (ctx *ConnectionCtx) SendStr(message string) error {
   return ctx.Send([]byte(message))
 }
 
-func (ss *HXServer) SendFilter(event string, message []byte, check func(*HXConnectionCtx) bool) {
+func (ss *Server) SendFilter(event string, message []byte, check func(*ConnectionCtx) bool) {
 	for _, conn := range *ss.Connections {
 		if check(conn) {
 			err := conn.Send(message)
