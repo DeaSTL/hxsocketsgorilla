@@ -39,7 +39,7 @@ type Message struct {
 	TriggerName string `json:"HX-Trigger-Name"`
 	Target      string `json:"HX-Target"`
 	CurrentURL  string `json:"HX-Current-URL"`
-  Includes    map[string]string
+	Includes    map[string]string
 }
 
 type Listener struct {
@@ -114,62 +114,59 @@ func (ss *Server) handleNewConnection(w http.ResponseWriter, r *http.Request) {
 
 	ss.newMessageListener(&new_ctx)
 }
+
 /*
-{
-  HEADERS: {}, // HTMX stuff
-  some_key: 'some value'
-  ...
-}
+	{
+	  HEADERS: {}, // HTMX stuff
+	  some_key: 'some value'
+	  ...
+	}
 */
 func (ss *Server) newMessageListener(ctx *ConnectionCtx) {
 	go func(ctx *ConnectionCtx) {
 		for {
-      rawMessage := map[string]any{}
+			rawMessage := map[string]any{}
 
 			err := ctx.Client.ReadJSON(&rawMessage)
-
-      
 
 			if err != nil {
 				log.Printf("Error reading json message: %v", err)
 				break
 			}
-      
-      /*
-      We're pulling off the HEADERS and making it a HtmxMesssage
-      */
-      jsonMessage, err := json.Marshal(rawMessage["HEADERS"])
 
-      if err != nil {
+			/*
+			   We're pulling off the HEADERS and making it a HtmxMesssage
+			*/
+			jsonMessage, err := json.Marshal(rawMessage["HEADERS"])
 
-      }
+			if err != nil {
 
-      message := Message{}
+			}
 
-      err = json.Unmarshal(jsonMessage,&message)
+			message := Message{}
 
+			err = json.Unmarshal(jsonMessage, &message)
 
-      // Yoinkin' that header off the json blob
-      delete(rawMessage,"HEADERS")
-      
+			// Yoinkin' that header off the json blob
+			delete(rawMessage, "HEADERS")
 
-      message.Includes = make(map[string]string)
+			message.Includes = make(map[string]string)
 
-      for key, value := range rawMessage {
+			for key, value := range rawMessage {
 
-        switch v := value.(type) {
-          case string:
-            message.Includes[key] = v
-          case int:
-            message.Includes[key] = strconv.Itoa(v)
-          case float64:
-            message.Includes[key] = strconv.FormatFloat(v,'f',-1,64)
-          default:
-            message.Includes[key] = fmt.Sprintf("%v",v)
+				switch v := value.(type) {
+				case string:
+					message.Includes[key] = v
+				case int:
+					message.Includes[key] = strconv.Itoa(v)
+				case float64:
+					message.Includes[key] = strconv.FormatFloat(v, 'f', -1, 64)
+				default:
+					message.Includes[key] = fmt.Sprintf("%v", v)
 
-        }
+				}
 
-      }
+			}
 
 			err = ss.messageHandler(ctx, &message)
 
@@ -222,7 +219,7 @@ func (ss *Server) Listen(event string, listener func(*ConnectionCtx, *Message)) 
 
 func (ctx *ConnectionCtx) Send(message []byte) error {
 
-  err := ctx.Client.WriteMessage(1,message)
+	err := ctx.Client.WriteMessage(1, message)
 
 	if err != nil {
 		return fmt.Errorf("Could not send message err: %v ", err)
@@ -232,7 +229,7 @@ func (ctx *ConnectionCtx) Send(message []byte) error {
 }
 
 func (ctx *ConnectionCtx) SendStr(message string) error {
-  return ctx.Send([]byte(message))
+	return ctx.Send([]byte(message))
 }
 
 func (ss *Server) SendFilter(event string, message []byte, check func(*ConnectionCtx) bool) {
@@ -248,4 +245,3 @@ func (ss *Server) SendFilter(event string, message []byte, check func(*Connectio
 		}
 	}
 }
-
