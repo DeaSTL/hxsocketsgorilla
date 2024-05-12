@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/websocket"
 )
@@ -39,7 +38,7 @@ type Message struct {
 	TriggerName string `json:"HX-Trigger-Name"`
 	Target      string `json:"HX-Target"`
 	CurrentURL  string `json:"HX-Current-URL"`
-	Includes    map[string]string
+	Includes    map[string]any
 }
 
 type Listener struct {
@@ -150,23 +149,25 @@ func (ss *Server) newMessageListener(ctx *ConnectionCtx) {
 			// Yoinkin' that header off the json blob
 			delete(rawMessage, "HEADERS")
 
-			message.Includes = make(map[string]string)
+			message.Includes = rawMessage
 
-			for key, value := range rawMessage {
-
-				switch v := value.(type) {
-				case string:
-					message.Includes[key] = v
-				case int:
-					message.Includes[key] = strconv.Itoa(v)
-				case float64:
-					message.Includes[key] = strconv.FormatFloat(v, 'f', -1, 64)
-				default:
-					message.Includes[key] = fmt.Sprintf("%v", v)
-
-				}
-
-			}
+			// 			message.Includes = make(map[string]string)
+			//
+			// 			for key, value := range rawMessage {
+			//
+			// 				switch v := value.(type) {
+			// 				case string:
+			// 					message.Includes[key] = v
+			// 				case int:
+			// 					message.Includes[key] = strconv.Itoa(v)
+			// 				case float64:
+			// 					message.Includes[key] = strconv.FormatFloat(v, 'f', -1, 64)
+			// 				default:
+			// 					message.Includes[key] = fmt.Sprintf("%v", v)
+			//
+			// 				}
+			//
+			// 			}
 
 			err = ss.messageHandler(ctx, &message)
 
