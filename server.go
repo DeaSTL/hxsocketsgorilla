@@ -5,10 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/websocket"
 )
 
 func GenB64(length int) string {
@@ -57,11 +56,6 @@ type ConnectionCtx struct {
 	SessionID string
 }
 
-// type Message struct {
-// 	Type string          `json:"type"`
-// 	Data HtmxMessage `json:"data"`
-// }
-
 func (ss *Server) LogConnections() {
 	for _, client := range *ss.Connections {
 		log.Printf("Client %v", client.SessionID)
@@ -77,6 +71,10 @@ func (ss *Server) New() {
 
 func (ss *Server) Start(mux *http.ServeMux, endpoint string) {
 	mux.Handle(endpoint, http.HandlerFunc(ss.handleNewConnection))
+}
+
+func (ss *Server) UpgradeHandler() func(http.ResponseWriter, *http.Request) {
+  return http.HandlerFunc(ss.handleNewConnection)
 }
 
 func (ss *Server) handleCloseConnection(ctx *ConnectionCtx) func(int, string) error {
@@ -150,24 +148,6 @@ func (ss *Server) newMessageListener(ctx *ConnectionCtx) {
 			delete(rawMessage, "HEADERS")
 
 			message.Includes = rawMessage
-
-			// 			message.Includes = make(map[string]string)
-			//
-			// 			for key, value := range rawMessage {
-			//
-			// 				switch v := value.(type) {
-			// 				case string:
-			// 					message.Includes[key] = v
-			// 				case int:
-			// 					message.Includes[key] = strconv.Itoa(v)
-			// 				case float64:
-			// 					message.Includes[key] = strconv.FormatFloat(v, 'f', -1, 64)
-			// 				default:
-			// 					message.Includes[key] = fmt.Sprintf("%v", v)
-			//
-			// 				}
-			//
-			// 			}
 
 			err = ss.messageHandler(ctx, &message)
 
