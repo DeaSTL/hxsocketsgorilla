@@ -37,6 +37,16 @@ type NethttpServer struct {
 	Connections  *[]*NethttpClient
 }
 
+func NewNetHttp() hx.IServer {
+	return NethttpServer{
+    mux: http.NewServeMux(),
+    OnConnection:func(ctx *NethttpClient) {},
+    OnDisconnect : func(ctx *NethttpClient) {},
+    listeners : map[string]NethttpListener{},
+    Connections : &[]*NethttpClient{},
+  }
+}
+
 // Broadcast implements hx.IServer.
 func (s NethttpServer) Broadcast(event string, message []byte) error {
   return nil
@@ -150,6 +160,3 @@ func (s *NethttpServer) handleNewConnection(w http.ResponseWriter, r *http.Reque
 	s.newMessageListener(&new_client)
 }
 
-func NewNetHttp() hx.IServer {
-	return NethttpServer{}
-}
