@@ -134,6 +134,8 @@ func (s *NethttpServer) newMessageListener(client *NethttpClient) {
 }
 
 func (s *NethttpServer) messageHandler(client *NethttpClient, message *hx.Message) error {
+  log.Printf("client: %+v", *client)
+  log.Printf("message: %+v", *message)
 	for event, listener := range s.listeners {
 		if message.Trigger == event {
 
