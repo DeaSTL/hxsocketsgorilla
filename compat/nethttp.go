@@ -38,9 +38,9 @@ type NethttpServer struct {
 	Connections  *[]*NethttpClient
 }
 
-func NewNetHttp() hx.IServer {
+func NewNetHttp(mux *http.ServeMux) hx.IServer {
 	return NethttpServer{
-    mux: http.NewServeMux(),
+    mux: mux,
     OnConnection:func(ctx *NethttpClient) {},
     OnDisconnect : func(ctx *NethttpClient) {},
     listeners : map[string]NethttpListener{},
