@@ -2,6 +2,7 @@ package compat
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -160,3 +161,17 @@ func (s *NethttpServer) handleNewConnection(w http.ResponseWriter, r *http.Reque
 	s.newMessageListener(&new_client)
 }
 
+func (ctx *NethttpClient) Send(message []byte) error {
+
+	err := ctx.Conn.WriteMessage(1, message)
+
+	if err != nil {
+		return fmt.Errorf("Could not send message err: %v ", err)
+	}
+
+	return nil
+}
+
+func (ctx *NethttpClient) SendStr(message string) error {
+	return ctx.Send([]byte(message))
+}
