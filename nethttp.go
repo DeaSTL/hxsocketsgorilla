@@ -1,4 +1,4 @@
-package compat
+package hx
 
 import (
 	"encoding/json"
@@ -6,12 +6,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deastl/hx-sockets"
 	"github.com/deastl/hx-sockets/utils"
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
+var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  250000,
 	WriteBufferSize: 250000,
 	CheckOrigin: func(r *http.Request) bool {
@@ -23,12 +22,12 @@ var upgrader = websocket.Upgrader{
 }
 
 type NethttpClient struct {
-	SessionID string
 	Conn      *websocket.Conn
+	SessionID string
 }
 
 type NethttpListener struct {
-	Callback func(*NethttpClient, *hx.Message)
+	Callback func(*NethttpClient, *Message)
 }
 type NethttpServer struct {
 	mux          *http.ServeMux
@@ -38,7 +37,7 @@ type NethttpServer struct {
 	Connections  *[]*NethttpClient
 }
 
-func NewNetHttp(mux *http.ServeMux) hx.IServer {
+func NewNetHttp(mux *http.ServeMux) IServer {
 	return NethttpServer{
 		mux:          mux,
 		OnConnection: func(ctx *NethttpClient) {},
@@ -54,7 +53,7 @@ func (s NethttpServer) Broadcast(event string, message []byte) error {
 }
 
 // Listen implements hx.IServer.
-func (s NethttpServer) Listen(event string, listener func(*NethttpClient, *hx.Message)) {
+func (s NethttpServer) Listen(event string, listener func(*NethttpClient, *Message)) {
 	s.listeners[event] = NethttpListener{Callback: listener}
 }
 
@@ -110,12 +109,13 @@ func (s *NethttpServer) newMessageListener(client *NethttpClient) {
 			jsonMessage, err := json.Marshal(rawMessage["HEADERS"])
 
 			if err != nil {
-
+				//TODO: this
 			}
 
-			message := hx.Message{}
+			message := Message{}
 
 			err = json.Unmarshal(jsonMessage, &message)
+			//TODO: handle error
 
 			// Yoinkin' that header off the json blob
 			delete(rawMessage, "HEADERS")
@@ -133,7 +133,7 @@ func (s *NethttpServer) newMessageListener(client *NethttpClient) {
 	}(client)
 }
 
-func (s *NethttpServer) messageHandler(client *NethttpClient, message *hx.Message) error {
+func (s *NethttpServer) messageHandler(client *NethttpClient, message *Message) error {
 	log.Printf("client: %+v", *client)
 	log.Printf("message: %+v", *message)
 	for event, listener := range s.listeners {
@@ -148,7 +148,7 @@ func (s *NethttpServer) messageHandler(client *NethttpClient, message *hx.Messag
 func (s *NethttpServer) handleNewConnection(w http.ResponseWriter, r *http.Request) {
 	log.Print("Attempting to connect new client")
 
-	conn, err := upgrader.Upgrade(w, r, nil)
+	conn, err := Upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
 		log.Printf("Could not upgrade connection: %v", err)
@@ -168,7 +168,7 @@ func (ctx *NethttpClient) Send(message []byte) error {
 	err := ctx.Conn.WriteMessage(1, message)
 
 	if err != nil {
-		return fmt.Errorf("Could not send message err: %v ", err)
+		return fmt.Errorf("could not send message err: %v ", err)
 	}
 
 	return nil

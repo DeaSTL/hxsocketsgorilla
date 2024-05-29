@@ -1,9 +1,5 @@
 package hx
 
-import (
-	"github.com/gorilla/websocket"
-)
-
 type Message struct {
 	Includes    map[string]any
 	Request     string `json:"HX-Request"`
@@ -22,9 +18,4 @@ type IServer interface {
 type IClient interface {
 	Send(message []byte) error
 	SendStr(message string) error
-}
-
-type ConnectionCtx struct {
-	Client    *websocket.Conn
-	SessionID string
 }
