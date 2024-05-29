@@ -40,22 +40,22 @@ type NethttpServer struct {
 
 func NewNetHttp(mux *http.ServeMux) hx.IServer {
 	return NethttpServer{
-    mux: mux,
-    OnConnection:func(ctx *NethttpClient) {},
-    OnDisconnect : func(ctx *NethttpClient) {},
-    listeners : map[string]NethttpListener{},
-    Connections : &[]*NethttpClient{},
-  }
+		mux:          mux,
+		OnConnection: func(ctx *NethttpClient) {},
+		OnDisconnect: func(ctx *NethttpClient) {},
+		listeners:    map[string]NethttpListener{},
+		Connections:  &[]*NethttpClient{},
+	}
 }
 
 // Broadcast implements hx.IServer.
 func (s NethttpServer) Broadcast(event string, message []byte) error {
-  return nil
+	return nil
 }
 
 // Listen implements hx.IServer.
 func (s NethttpServer) Listen(event string, listener func(*NethttpClient, *hx.Message)) {
-  s.listeners[event] = NethttpListener{Callback: listener}
+	s.listeners[event] = NethttpListener{Callback: listener}
 }
 
 // Start implements hx.IServer.
@@ -134,8 +134,8 @@ func (s *NethttpServer) newMessageListener(client *NethttpClient) {
 }
 
 func (s *NethttpServer) messageHandler(client *NethttpClient, message *hx.Message) error {
-  log.Printf("client: %+v", *client)
-  log.Printf("message: %+v", *message)
+	log.Printf("client: %+v", *client)
+	log.Printf("message: %+v", *message)
 	for event, listener := range s.listeners {
 		if message.Trigger == event {
 
