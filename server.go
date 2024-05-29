@@ -10,7 +10,7 @@ type Message struct {
 }
 
 type IServer interface {
-	Start(mountpoint string)
+	Mount(mountpoint string)
 	//Listen(event string, listener func(*IClient, *Message))
 	Broadcast(event string, message []byte) error
 }

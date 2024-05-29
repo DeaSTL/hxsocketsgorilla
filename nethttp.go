@@ -58,7 +58,7 @@ func (s NethttpServer) Listen(event string, listener func(*NethttpClient, *Messa
 }
 
 // Start implements hx.IServer.
-func (s NethttpServer) Start(mountpoint string) {
+func (s NethttpServer) Mount(mountpoint string) {
 	s.mux.Handle(mountpoint, http.HandlerFunc(s.handleNewConnection))
 }
 
