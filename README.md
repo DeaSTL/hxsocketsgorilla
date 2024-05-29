@@ -1,8 +1,7 @@
 # hx-sockets
 
 hx-sockets is a small layer around the gorilla websockets *currently making it easier to get up and running with htmx websockets.
-currently it is not ready for production use or anything outside of demoing because i'd like to make sure that the compatibility module system is the best that it can be.
-
+currently it is not ready for production use 
 here is some demo code
 ```go
 func main() {
