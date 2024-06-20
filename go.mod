@@ -1,4 +1,4 @@
-module github.com/deastl/hx-sockets
+module github.com/deastl/hxsocketsgorilla
 
 go 1.22.3
 
